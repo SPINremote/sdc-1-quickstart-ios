@@ -1,13 +1,13 @@
 //
 //  ViewController.swift
 //  SPIN remote SDC-1 QuickStart
-//  
+//
 //  Created by Corjan van Hamersveld on 31/01/2017.
 //  Copyright © 2017 SPIN remote B.V. All rights reserved.
 //
 //
 // This class handles both the communication with the SPIN remote and updating the GUI.
-// 
+//
 // In chronological order, this is what happens:
 //
 // 1. The ViewController is created from the view in the Main storyboard
@@ -54,7 +54,7 @@ import UIKit
 import CoreBluetooth
 
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate {
-
+    
     // GUI views
     @IBOutlet weak var scanningLabel: UILabel!
     @IBOutlet weak var connectedLabel: UILabel!
@@ -76,6 +76,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // Reference to the active bluetooth peripheral (the SPIN)
     var spinRemotePeripheral : CBPeripheral? = nil
     
+    // Reference to the SPIN command characteristic
+    var spinCommandCharacteristic : CBCharacteristic? = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -88,6 +91,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         // Stop scan when this view is disappearing
         centralManager?.stopScan()
+        
+        if (spinRemotePeripheral != nil) && (spinCommandCharacteristic != nil) {
+            // Disable LED color. This will make the SPIN remote choose its color on its own
+            let data = Data(bytes: UnsafePointer<UInt8>(
+                [0x08,  // commandId = force action notification (8)
+                    0x01]  // enable = false (0) or true (1)
+            ), count: 2)
+            
+            spinRemotePeripheral!.writeValue(data, for: spinCommandCharacteristic!, type: .withResponse)
+        }
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
@@ -178,12 +191,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 peripheral.setNotifyValue(true, for: characteristic)
             }
             if characteristic.uuid == spinCommandCharacteristicUUID {
+                
+                // Keep a reference to this characteristic
+                spinCommandCharacteristic = characteristic
+                
                 // We will set flag Force Action Notification to true on the SPIN remote via the Command characteristic
                 // This will force the SPIN remote to notify us with all user gestures (rotate, swipe, touchpad etc.)
-
+                
                 var data = Data(bytes: UnsafePointer<UInt8>(
                     [0x08,  // commandId = force action notification (8)
-                     0x01]  // enable = false (0) or true (1)
+                        0x01]  // enable = false (0) or true (1)
                 ), count: 2)
                 
                 peripheral.writeValue(data, for: characteristic, type: .withResponse)
@@ -204,9 +221,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 let blueByte = UInt8(blue * 255)
                 data = Data(bytes: UnsafePointer<UInt8>(
                     [0x09,      // commandId = set color (9)
-                     redByte,   // red component (0-255)
-                     greenByte, // green component (0-255)
-                     blueByte]  // blue component (0-255)
+                        redByte,   // red component (0-255)
+                        greenByte, // green component (0-255)
+                        blueByte]  // blue component (0-255)
                 ), count: 4)
                 
                 peripheral.writeValue(data, for: characteristic, type: .withResponse)
@@ -224,30 +241,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             let actionStrings = [String](arrayLiteral:
                 "rotate_right_side_up_clockwise",
-                "rotate_right_side_up_counterclockwise",
-                "rotate_sideways_clockwise",
-                "rotate_sideways_counterclockwise",
-                "rotate_upside_down_clockwise",
-                "rotate_upside_down_counterclockwise",
-                "touchpad_swipe_up",
-                "touchpad_swipe_down",
-                "touchpad_swipe_left",
-                "touchpad_swipe_right",
-                "touchpad_press_north",
-                "touchpad_press_south",
-                "touchpad_press_east",
-                "touchpad_press_west",
-                "touchpad_press_center",
-                "touchpad_long_press_north",
-                "touchpad_long_press_south",
-                "touchpad_long_press_east",
-                "touchpad_long_press_west",
-                "touchpad_long_press_center",
-                "touchpad_scroll_clockwise",
-                "touchpad_scroll_counterclockwise",
-                "reserved",
-                "reserved",
-                "spin_wake_up")
+                                         "rotate_right_side_up_counterclockwise",
+                                         "rotate_sideways_clockwise",
+                                         "rotate_sideways_counterclockwise",
+                                         "rotate_upside_down_clockwise",
+                                         "rotate_upside_down_counterclockwise",
+                                         "touchpad_swipe_up",
+                                         "touchpad_swipe_down",
+                                         "touchpad_swipe_left",
+                                         "touchpad_swipe_right",
+                                         "touchpad_press_north",
+                                         "touchpad_press_south",
+                                         "touchpad_press_east",
+                                         "touchpad_press_west",
+                                         "touchpad_press_center",
+                                         "touchpad_long_press_north",
+                                         "touchpad_long_press_south",
+                                         "touchpad_long_press_east",
+                                         "touchpad_long_press_west",
+                                         "touchpad_long_press_center",
+                                         "touchpad_scroll_clockwise",
+                                         "touchpad_scroll_counterclockwise",
+                                         "reserved",
+                                         "reserved",
+                                         "spin_wake_up")
             
             let actionAsString = Int(id) < actionStrings.count ? actionStrings[Int(id)] : "unknown"
             
