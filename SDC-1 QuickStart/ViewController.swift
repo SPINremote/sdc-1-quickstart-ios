@@ -95,9 +95,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if (spinRemotePeripheral != nil) && (spinCommandCharacteristic != nil) {
             // Disable LED color. This will make the SPIN remote choose its color on its own
             let data = Data(bytes: UnsafePointer<UInt8>(
-                [0x08,  // commandId = force action notification (8)
-                    0x01]  // enable = false (0) or true (1)
-            ), count: 2)
+                [0x07]  // commandId = cancel LED override (7)
+            ), count: 1)
             
             spinRemotePeripheral!.writeValue(data, for: spinCommandCharacteristic!, type: .withResponse)
         }
@@ -200,7 +199,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 
                 var data = Data(bytes: UnsafePointer<UInt8>(
                     [0x08,  // commandId = force action notification (8)
-                        0x01]  // enable = false (0) or true (1)
+                     0x01]  // enable = false (0) or true (1)
                 ), count: 2)
                 
                 peripheral.writeValue(data, for: characteristic, type: .withResponse)
@@ -221,9 +220,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 let blueByte = UInt8(blue * 255)
                 data = Data(bytes: UnsafePointer<UInt8>(
                     [0x09,      // commandId = set color (9)
-                        redByte,   // red component (0-255)
-                        greenByte, // green component (0-255)
-                        blueByte]  // blue component (0-255)
+                     redByte,   // red component (0-255)
+                     greenByte, // green component (0-255)
+                     blueByte]  // blue component (0-255)
                 ), count: 4)
                 
                 peripheral.writeValue(data, for: characteristic, type: .withResponse)
